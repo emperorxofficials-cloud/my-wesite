@@ -1,10 +1,132 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>My Website</title>
+  <meta charset="UTF-8">
+  <title>Aura Gaming Hub</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: white;
+      text-align: center;
+      overflow: hidden;
+      background: #0f0f1a;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+
+    header {
+      padding: 40px;
+    }
+
+    h1 {
+      font-size: 42px;
+      color: #00ffcc;
+    }
+
+    p {
+      color: #ccc;
+    }
+
+    .btn {
+      display: inline-block;
+      margin: 10px;
+      padding: 12px 20px;
+      background: #00ffcc;
+      color: black;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+
+    .btn:hover {
+      background: #00ccaa;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      padding: 20px;
+      margin: 20px auto;
+      width: 80%;
+      border-radius: 12px;
+    }
+  </style>
 </head>
+
 <body>
-  <h1>Hello 👋</h1>
-  <p>My first website is live!</p>
+
+<canvas id="particles"></canvas>
+
+<header>
+  <h1>🎮 Aura Gaming Hub</h1>
+  <p>Ultimate gaming universe</p>
+
+  <a class="btn" href="#">Join Discord</a>
+  <a class="btn" href="#">Watch Videos</a>
+</header>
+
+<div class="card">
+  <h2>🔥 Games</h2>
+  <p>Action • Racing • Adventure</p>
+</div>
+
+<div class="card">
+  <h2>🏆 Tournaments</h2>
+  <p>Compete and win rewards</p>
+</div>
+
+<div class="card">
+  <h2>💬 Community</h2>
+  <p>Connect with gamers worldwide</p>
+</div>
+
+<script>
+const canvas = document.getElementById("particles");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let particles = [];
+
+for (let i = 0; i < 80; i++) {
+  particles.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 3,
+    dx: (Math.random() - 0.5) * 1,
+    dy: (Math.random() - 0.5) * 1
+  });
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#00ffcc";
+
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+
+    p.x += p.dx;
+    p.y += p.dy;
+
+    if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+    if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+  });
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+
 </body>
 </html>
