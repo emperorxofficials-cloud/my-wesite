@@ -1,205 +1,153 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8" />
-<title>Shooting Game</title>
+<meta charset="utf-8">
+<title>Fruit RPG World</title>
 <style>
-  body { margin:0; overflow:hidden; background:#111; color:white; font-family:sans-serif; }
-  canvas { display:block; margin:0 auto; background:#222; }
+body { margin:0; background:#0b1020; overflow:hidden; font-family:sans-serif; }
+canvas { display:block; margin:0 auto; background:#1a2340; }
 
-  #ui {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    z-index: 10;
-  }
+#ui {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  color: white;
+}
 
-  button {
-    margin: 5px;
-    padding: 8px;
-  }
-
-  /* joystick */
-  #joyBase {
-    position: fixed;
-    bottom: 40px;
-    left: 40px;
-    width: 120px;
-    height: 120px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 50%;
-  }
-
-  #joyStick {
-    position: absolute;
-    width: 50px;
-    height: 50px;
-    background: rgba(0,150,255,0.6);
-    border-radius: 50%;
-    top: 35px;
-    left: 35px;
-  }
+button { margin:5px; padding:8px; }
 </style>
 </head>
 <body>
 
 <div id="ui">
-  <button onclick="shoot()">Shoot</button>
-  <button onclick="aimLock = !aimLock">Aim Lock</button>
+  <button onclick="attack()">Sword Attack</button>
+  <button onclick="useSkill()">Fruit Skill</button>
   <div id="stats"></div>
 </div>
 
-<canvas id="game" width="900" height="600"></canvas>
-
-<div id="joyBase">
-  <div id="joyStick"></div>
-</div>
+<canvas id="game" width="1000" height="600"></canvas>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 let keys = {};
-let aimLock = false;
 
-const player = {
-  x: 450,
-  y: 300,
-  hp: 200,
-  angle: 0
-};
-
-let bullets = [];
-let enemies = [];
-
-// spawn enemies
-for (let i = 0; i < 7; i++) {
-  enemies.push({
-    x: Math.random() * 900,
-    y: Math.random() * 600,
-    hp: 200
-  });
-}
-
-// keyboard
 window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
 window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
-// mouse aim
-canvas.addEventListener("mousemove", e => {
-  const r = canvas.getBoundingClientRect();
-  const mx = e.clientX - r.left;
-  const my = e.clientY - r.top;
-  player.angle = Math.atan2(my - player.y, mx - player.x);
-});
+// PLAYER
+const player = {
+  x: 500,
+  y: 300,
+  hp: 200,
+  speed: 3,
+  level: 1,
+  xp: 0
+};
 
-// shoot
-function shoot() {
-  bullets.push({
-    x: player.x,
-    y: player.y,
-    dx: Math.cos(player.angle) * 8,
-    dy: Math.sin(player.angle) * 8
+// ENEMIES
+let enemies = [];
+
+for (let i=0;i<10;i++){
+  enemies.push({
+    x: Math.random()*1000,
+    y: Math.random()*600,
+    hp: 100
   });
 }
 
-// joystick (mobile style)
-let joy = { x:0, y:0 };
+// ATTACK SYSTEM
+function attack(){
+  enemies.forEach(e=>{
+    let dx = e.x - player.x;
+    let dy = e.y - player.y;
+    let dist = Math.hypot(dx,dy);
 
-const stick = document.getElementById("joyStick");
-const base = document.getElementById("joyBase");
+    if(dist < 60){
+      e.hp -= 25; // sword damage
+    }
+  });
+}
 
-let dragging = false;
+// FRUIT SKILL (AOE)
+let skillCooldown = false;
 
-base.addEventListener("touchstart", e => dragging = true);
-base.addEventListener("touchend", e => {
-  dragging = false;
-  joy.x = joy.y = 0;
-  stick.style.transform = `translate(0px,0px)`;
-});
+function useSkill(){
+  if(skillCooldown) return;
 
-base.addEventListener("touchmove", e => {
-  if (!dragging) return;
-  const t = e.touches[0];
-  const rect = base.getBoundingClientRect();
+  skillCooldown = true;
 
-  let dx = t.clientX - (rect.left + 60);
-  let dy = t.clientY - (rect.top + 60);
+  enemies.forEach(e=>{
+    let dist = Math.hypot(e.x-player.x, e.y-player.y);
+    if(dist < 150){
+      e.hp -= 50; // fruit damage
+    }
+  });
 
-  const dist = Math.min(40, Math.hypot(dx, dy));
-  const angle = Math.atan2(dy, dx);
+  setTimeout(()=> skillCooldown=false, 2000);
+}
 
-  joy.x = Math.cos(angle) * dist;
-  joy.y = Math.sin(angle) * dist;
+// GAME LOOP
+function loop(){
 
-  stick.style.transform = `translate(${joy.x}px,${joy.y}px)`;
-});
+  ctx.clearRect(0,0,1000,600);
 
-// game loop
-function loop() {
-  ctx.clearRect(0,0,900,600);
+  // MOVE
+  if(keys["w"]) player.y -= player.speed;
+  if(keys["s"]) player.y += player.speed;
+  if(keys["a"]) player.x -= player.speed;
+  if(keys["d"]) player.x += player.speed;
 
-  // movement (keyboard + joystick)
-  if (keys["w"]) player.y -= 3;
-  if (keys["s"]) player.y += 3;
-  if (keys["a"]) player.x -= 3;
-  if (keys["d"]) player.x += 3;
-
-  player.x += joy.x * 0.05;
-  player.y += joy.y * 0.05;
-
-  // draw player
-  ctx.fillStyle = "cyan";
+  // DRAW PLAYER
+  ctx.fillStyle="cyan";
   ctx.beginPath();
-  ctx.arc(player.x, player.y, 10, 0, Math.PI*2);
+  ctx.arc(player.x,player.y,10,0,Math.PI*2);
   ctx.fill();
 
-  // enemies
-  enemies.forEach(e => {
+  // ENEMIES AI
+  enemies.forEach(e=>{
     let dx = player.x - e.x;
     let dy = player.y - e.y;
-    let dist = Math.hypot(dx, dy);
+    let dist = Math.hypot(dx,dy);
 
-    e.x += dx / dist * 1.2;
-    e.y += dy / dist * 1.2;
+    e.x += dx/dist * 1.2;
+    e.y += dy/dist * 1.2;
 
-    ctx.fillStyle = "red";
+    ctx.fillStyle="red";
     ctx.beginPath();
-    ctx.arc(e.x, e.y, 12, 0, Math.PI*2);
+    ctx.arc(e.x,e.y,10,0,Math.PI*2);
     ctx.fill();
 
-    // damage player
-    if (dist < 15) player.hp -= 0.3;
+    if(dist < 15){
+      player.hp -= 0.5;
+    }
 
-    ctx.fillStyle = "white";
-    ctx.fillText(e.hp, e.x - 10, e.y - 15);
+    // HP text
+    ctx.fillStyle="white";
+    ctx.fillText(e.hp, e.x-10, e.y-15);
   });
 
-  // bullets
-  bullets.forEach((b, i) => {
-    b.x += b.dx;
-    b.y += b.dy;
+  // REMOVE DEAD
+  enemies = enemies.filter(e=>e.hp>0);
 
-    ctx.fillStyle = "yellow";
-    ctx.fillRect(b.x, b.y, 4, 4);
+  // LEVEL SYSTEM
+  if(enemies.length === 0){
+    player.level++;
+    player.xp += 50;
 
-    enemies.forEach(e => {
-      let dx = b.x - e.x;
-      let dy = b.y - e.y;
-      let dist = Math.hypot(dx, dy);
-
-      if (dist < 12) {
-        e.hp -= 20; // 👈 damage per bullet
-        bullets.splice(i, 1);
-      }
-    });
-  });
-
-  enemies = enemies.filter(e => e.hp > 0);
+    for(let i=0;i<10;i++){
+      enemies.push({
+        x: Math.random()*1000,
+        y: Math.random()*600,
+        hp: 100 + player.level*10
+      });
+    }
+  }
 
   // UI
   document.getElementById("stats").innerHTML =
-    `HP: ${Math.floor(player.hp)} | Enemies: ${enemies.length} | AimLock: ${aimLock}`;
+  `HP:${Math.floor(player.hp)} | Level:${player.level} | Enemies:${enemies.length}`;
 
   requestAnimationFrame(loop);
 }
